@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+data/
+out-baby-claude/
+out-baby-claude-buffett/
+upstream-nanoGPT/
+upstream-build-nanogpt/
+*.bin
+*.pkl
+*.pt
+*.muse-github-snapshot-sync.json

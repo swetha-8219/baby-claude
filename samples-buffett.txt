@@ -1,0 +1,13 @@
+
+--- sample 1 (prompt: 'To the Shareholders of Berkshire Hathaway Inc.:\n\n') ---
+To the Shareholders of Berkshire Hathaway Inc.:
+
+Ondicalld ar inceed hin on fongen sithalur fisticoures fince as sesins tin thertoris bin cerseang arere whoure fan alond brofr ontonger t io ad foll thater tinton into ofat e ane and wit ing atans ang
+
+--- sample 2 (prompt: 'We look for businesses that we can understand, with favorable long-term prospects, operated by honest and competent people, and available at a very attractive price. ') ---
+We look for businesses that we can understand, with favorable long-term prospects, operated by honest and competent people, and available at a very attractive price. Ine s. t a ousous, cks aliorect at asestelin ssthal in tounarind ich che wiser s toune inists t s in ficeseshe cetesentoncer intend at wit orores mal it ilethe there t ss s ate butin arout ff wne thel
+
+--- sample 3 (prompt: 'Charlie and I believe that accounting is the language of business, and ') ---
+Charlie and I believe that accounting is the language of business, and ctistre fenely in a thatine o an anto thes t anaraceste in is w a in thers s cors thedathas t ththe asec be t t tin me t iventhanens st ong wheroure becoft mpatestof whinare tintang met oncat any.
+
+Th
