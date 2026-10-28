@@ -3,6 +3,8 @@ __pycache__/
 data/
 out-baby-claude/
 out-baby-claude-buffett/
+out-baby-claude-buffett-2000/
+out-baby-claude-buffett-clean-5000/
 upstream-nanoGPT/
 upstream-build-nanogpt/
 *.bin

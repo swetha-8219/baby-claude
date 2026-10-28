@@ -1,0 +1,16 @@
+
+--- sample 1 (prompt: 'To the Shareholders of Berkshire Hathaway Inc.:\n\n') ---
+To the Shareholders of Berkshire Hathaway Inc.:
+
+120, with a right a brookerage in 2001,000 that the will all as sen-issurpring to be in the searinared any we cost means business of
+armount appriations – pair firmated thought our prestained tall gas
+
+--- sample 2 (prompt: 'We look for businesses that we can understand, with favorable long-term prospects, operated by honest and competent people, and available at a very attractive price. ') ---
+We look for businesses that we can understand, with favorable long-term prospects, operated by honest and competent people, and available at a very attractive price. It the structs
+evt of all of course, became when their their buying behings we shareholders to a mind if insurer those only to tene excent or
+becase of the invitues of that as whateh are to be primmel
+
+--- sample 3 (prompt: 'Charlie and I believe that accounting is the language of business, and ') ---
+Charlie and I believe that accounting is the language of business, and at streg early in early the e an a talk to the 
+partice in these off the shareholders at as the to ought a year the mand monney that our operations. The stamed
+escomed in the tenations and a you a dea

@@ -21,7 +21,10 @@ data/shakespeare_char/):
   train.bin / val.bin — uint16 token ids, 90/10 split
 
 Usage:
-    .venv/bin/python prepare_buffett.py
+    .venv/bin/python prepare_buffett.py [--clean-tables] [--out-dir data/buffett-clean]
+    Default (no flags) rebuilds data/buffett/ exactly as before.
+    --clean-tables removes each letter's front performance table
+    and mid-letter table rows; see clean_tables().
 Requires: requests, pypdf, fonttools, numpy (see requirements.txt).
 """
 import io
@@ -77,6 +80,108 @@ def clean(text):
     return text.strip()
 
 
+_TABLE_HEADER_PHRASES = (
+    "Corporate Performance vs",
+    "Annual Percentage Change",
+    "Compounded Annual Gain",
+    "Overall Gain",
+    "Year (1) (2)",
+)
+
+
+def _is_table_row(line):
+    """True for lines that are table rows, not prose.
+
+    Conservative on purpose: a prose sentence that happens
+    to contain numbers (a phone number, a date, a dollar
+    figure) must survive. Only lines that are dotted
+    leaders, almost entirely numbers, or mostly numeric
+    tokens with a table-like shape are dropped.
+    """
+    s = line.strip()
+    if not s:
+        return False
+    if "...." in s:  # dotted leader, e.g. "1965 .... 23.8 10.0 13.8"
+        return True
+    if s.isdigit():  # stray page number
+        return True
+    if len(s) < 80 and any(p in s for p in _TABLE_HEADER_PHRASES):
+        return True
+    nums = re.findall(r"-?\(?\d[\d,\.]*\)?%?", s)
+    if not nums:
+        return False
+    tokens = s.split()
+    # Almost entirely digits/punctuation: a table row or a
+    # bare list of figures, not a sentence.
+    non_space = [c for c in s if c != " "]
+    if non_space and sum(1 for c in non_space if c.isdigit() or c in ".,()%$+-") / len(non_space) > 0.8:
+        return True
+    # Mostly numeric tokens, short line: e.g. a holdings row
+    # "2,338,961,000 PetroChina ... 1.3 488 1,915".
+    if len(nums) >= 4 and len(nums) / max(len(tokens), 1) >= 0.4:
+        return True
+    return False
+
+
+def clean_tables(text):
+    """Remove the performance tables from the letters.
+
+    Two passes, both line-based so prose is never reworded:
+
+    1. Front table: in each letter, drop everything between
+       the letter header and "To the Shareholders", which is
+       where the letter proper starts. The header and the
+       "To the Shareholders" line itself are kept.
+    2. Mid-letter table rows: drop individual lines that
+       _is_table_row identifies as table rows.
+
+    Returns (cleaned_text, stats) where stats counts what
+    was removed, so a caller can sanity-check the result.
+    """
+    lines = text.split("\n")
+    kept = []
+    i = 0
+    front_removed = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("--- Berkshire Hathaway letter"):
+            kept.append(line)
+            i += 1
+            # Look ahead to the next header (or end) for the
+            # "To the Shareholders" marker.
+            j = i
+            marker = None
+            while j < len(lines) and not lines[j].startswith("--- Berkshire Hathaway letter"):
+                if "To the Shareholders" in lines[j]:
+                    marker = j
+                    break
+                j += 1
+            if marker is not None:
+                front_removed += marker - i
+                i = marker
+            continue
+        kept.append(line)
+        i += 1
+
+    out = []
+    rows_removed = 0
+    for line in kept:
+        if line.startswith("--- Berkshire Hathaway letter") or "To the Shareholders" in line:
+            out.append(line)
+        elif _is_table_row(line):
+            rows_removed += 1
+        else:
+            out.append(line)
+    cleaned = clean("\n".join(out))
+    stats = {
+        "front_table_lines_removed": front_removed,
+        "table_rows_removed": rows_removed,
+        "chars_before": len(text),
+        "chars_after": len(cleaned),
+    }
+    return cleaned, stats
+
+
 def fetch_pdf(session, year):
     from pypdf import PdfReader
 
@@ -96,6 +201,16 @@ def fetch_html(session, year):
 
 
 def main():
+    import argparse
+
+    p = argparse.ArgumentParser()
+    p.add_argument("--out-dir", type=str, default=OUT_DIR)
+    p.add_argument("--clean-tables", action="store_true",
+                   help="remove the front performance table of each letter "
+                        "and mid-letter table rows (see clean_tables)")
+    args = p.parse_args()
+    out_dir = args.out_dir
+
     session = requests.Session()
     session.headers.update(HEADERS)
     parts = []
@@ -131,24 +246,28 @@ def main():
     print(f"years used: {[y for y, _ in used]}")
     print(f"years skipped: {skipped}")
     print(f"total chars: {len(text):,}")
+    if args.clean_tables:
+        text, stats = clean_tables(text)
+        print(f"clean_tables: {stats}")
+        print(f"total chars after cleaning: {len(text):,}")
 
-    os.makedirs(OUT_DIR, exist_ok=True)
-    with open(os.path.join(OUT_DIR, "input.txt"), "w", encoding="utf-8") as f:
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "input.txt"), "w", encoding="utf-8") as f:
         f.write(text)
 
     chars = sorted(set(text))
     stoi = {ch: i for i, ch in enumerate(chars)}
     itos = {i: ch for i, ch in enumerate(chars)}
     print(f"vocab size: {len(chars)}")
-    with open(os.path.join(OUT_DIR, "meta.pkl"), "wb") as f:
+    with open(os.path.join(out_dir, "meta.pkl"), "wb") as f:
         pickle.dump({"vocab_size": len(chars), "itos": itos, "stoi": stoi}, f)
 
     data = np.array([stoi[c] for c in text], dtype=np.uint16)
     n = len(data)
     train_ids = data[: int(n * 0.9)]
     val_ids = data[int(n * 0.9):]
-    train_ids.tofile(os.path.join(OUT_DIR, "train.bin"))
-    val_ids.tofile(os.path.join(OUT_DIR, "val.bin"))
+    train_ids.tofile(os.path.join(out_dir, "train.bin"))
+    val_ids.tofile(os.path.join(out_dir, "val.bin"))
     print(f"train has {len(train_ids):,} tokens, val has {len(val_ids):,} tokens")
 
 
